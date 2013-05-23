@@ -59,19 +59,19 @@ define git::config(
 
   case $scope {
     'system','global': {
-      $git_scope = "--${scope}"
+      $git_scope = " --${scope}"
     }
     'repo': {
       if !$repo {
         fail("Scope: 'repo' requires passing the path to a git repository")
       }
-      $git_scope = "--git-dir $repo"
+      $git_scope = ""
     }
     'file': {
       if !$file {
         fail("Scope: 'file' requires passing the path to a git config file")
       }
-      $git_scope = "--file $file"
+      $git_scope = " --file '$file'"
     }
     default: { fail("Scope is unknown. Not one of ['system', 'global', 'repo', 'file']") }
   }
@@ -90,16 +90,19 @@ define git::config(
 
   case $ensure {
     'present': {
+      # TODO require a value or values if ensure=present
       exec { "git::config set $description":
-        command => "$git config $git_scope $setting",
-        unless => "$git config $git_scope --get $match",
+        cwd       => $repo,
+        command   => "$git config$git_scope $setting",
+        unless    => "$git config$git_scope --get $match",
         logoutput => on_failure,
       }
     }
     'absent': {
       exec { "git::config unset $description":
-        command => "$git config $git_scope --unset $match",
-        onlyif => "$git config $git_scope --get $match",
+        cwd       => $repo,
+        command   => "$git config$git_scope --unset $match",
+        onlyif    => "$git config$git_scope --get $match",
         logoutput => on_failure,
       }
     }
